@@ -1,13 +1,13 @@
 from jqdatasdk import *
-from date_utils import *
-from list_utils import *
+from utils.date_utils import *
+from utils.list_utils import *
 import numpy as np
 import datetime
 
 
-def ma(code, n, date, unit='1d'):
+def ma(code, n, date, unit='1d', include_now=False):
     if isinstance(code, list):
-        close_data = get_bars(security=code, count=n, unit=unit, fields=['close'], include_now=False, end_dt=date,
+        close_data = get_bars(security=code, count=n, unit=unit, fields=['close'], include_now=include_now, end_dt=date,
                               fq_ref_date=None)
         temp_data = {}
         for k, v in close_data['close'].to_dict().items():
@@ -20,7 +20,7 @@ def ma(code, n, date, unit='1d'):
             result[k] = round(np.mean(v), 2)
         return result
     else:
-        close_data = get_bars(security=code, count=n, unit=unit, fields=['close'], include_now=False, end_dt=date,
+        close_data = get_bars(security=code, count=n, unit=unit, fields=['close'], include_now=include_now, end_dt=date,
                               fq_ref_date=None)
         return round(close_data['close'][n*-1:].mean(), 2)
 
@@ -79,6 +79,20 @@ def get_last_n_price_info(code, ts, n, frequency='daily'):
         }
         result.append(info)
     return result
+
+
+def get_last_low_price(code, unit='1d'):
+    if isinstance(code, list):
+        low_data = get_bars(security=code, count=1, unit=unit, fields=['low'], include_now=True, end_dt=now(),
+                              fq_ref_date=None)
+        result = {}
+        for k, v in low_data['low'].to_dict().items():
+            result[k[0]] = [v]
+        return result
+    else:
+        low_data = get_bars(security=code, count=1, unit=unit, fields=['low'], include_now=True, end_dt=now(),
+                              fq_ref_date=None)
+        return low_data['low'].to_dict()[0]
 
 
 # 判断是否为下分型

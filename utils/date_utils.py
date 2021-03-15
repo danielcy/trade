@@ -1,6 +1,6 @@
 import datetime
 import time
-from redis_dao import PlaybackTestCache
+from repository.redis_dao import PlaybackTestCache
 
 
 def get_date(dt, add=None, sub=None):

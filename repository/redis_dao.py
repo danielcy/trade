@@ -1,7 +1,7 @@
 import redis
 import json
 import pickle
-import logger
+from utils import logger
 import time
 
 
@@ -9,6 +9,7 @@ TRACING_POOL_KEY = "tracing_pool"
 POSITION_STOCK_POOL_KEY = "position_stock_pool"
 PLAYBACK_TEST_TS = "playback_test_ts"
 CLEARANCE_KEY = "clearance"
+PLAYBACK_RESULT = "playback_result"
 
 
 class StockTracingPool:
@@ -132,6 +133,20 @@ class PlaybackTestCache:
         if self.get_ts() is None:
             return int(time.time())
         return self.get_ts()
+
+    def add_result(self, id, date, result):
+        id_map_data = self.client.hget(PLAYBACK_RESULT, id)
+        id_map = {}
+        if id_map_data is not None:
+            id_map = pickle.loads(id_map_data)
+        id_map[date] = result
+        self.client.hset(PLAYBACK_RESULT, id, pickle.dumps(id_map))
+
+    def get_result(self, id):
+        data = self.client.hget(PLAYBACK_RESULT, id)
+        if data is None:
+            return {}
+        return pickle.loads(data)
 
 
 class ClearancePool:

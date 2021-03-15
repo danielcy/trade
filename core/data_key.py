@@ -31,9 +31,31 @@ MA_200_45D_MAP = "ma_200_45d_map"
 # 数据类型: dict
 MA_200_2M_MAP = "ma_200_2m_map"
 
+# 5月均线Map
+# 数据类型: dict
+MONTH_MA_5_MAP = "month_ma_5_map"
+
+# 上月5月均线Map
+# 数据类型: dict
+LAST_MONTH_MA_5_MAP = "last_month_ma_5_map"
+
+# 10月均线Map
+# 数据类型: dict
+MONTH_MA_10_MAP = "month_ma_10_map"
+
+# 上月10月均线Map
+LAST_MONTH_MA_10_MAP = "last_month_ma_10_map"
+
+# 20月均线Map
+# 数据类型: dict
+MONTH_MA_20_MAP = "month_ma_20_map"
+
 # 最新价格Map
 # 数据类型: dict
 LAST_PRICE_MAP = "last_price_map"
+
+# 最新最低价Map
+LAST_LOW_PRICE_MAP = "last_low_price_map"
 
 # 一年内最高价Map
 # 数据类型: dict

@@ -1,8 +1,8 @@
-from strategy import *
-from redis_dao import *
+from core.strategy import *
+from repository.redis_dao import *
 from vo.stock import *
-from stock_utils import *
-import logger
+from utils.stock_utils import *
+from utils import logger
 
 
 class Runner:
@@ -28,7 +28,7 @@ class Runner:
         # 选出符合选股条件的股票
         codes = self.strategy.select_stocks()
         # 剔除所有已在仓内的股票
-        position_stocks = self.position_stock_pool.get()
+        position_stocks = self.get_position_stocks()
         final_codes = []
         for code in codes:
             if code not in position_stocks.keys():
@@ -39,7 +39,7 @@ class Runner:
 
     def market_open(self):
         # 卖出逻辑
-        position_stocks = self.position_stock_pool.get()
+        position_stocks = self.get_position_stocks()
         for code, stock in position_stocks.items():
             if self.strategy.judge_sell(code):
                 price = get_price_by_ts(code, get_current_ts())
@@ -47,11 +47,11 @@ class Runner:
                 self.sell(code, price, amount)
 
         # 仅当有剩余仓位时考虑买入
-        if self.position_cnt < self.max_position_cnt:
+        if self.get_position_cnt() < self.max_position_cnt:
             # 取出追踪池内股票
             codes_map = self.tracing_pool.get()
             for code, _ in codes_map.items():
-                if self.position_cnt >= self.max_position_cnt:
+                if self.get_position_cnt() >= self.max_position_cnt:
                     break
                 if self.strategy.judge_buy(code):
                     price = get_price_by_ts(code, get_current_ts())
@@ -59,7 +59,7 @@ class Runner:
                     self.order(code, price, amount)
 
         # 更新持仓股票状态
-        position_stocks = self.position_stock_pool.get()
+        position_stocks = self.get_position_stocks()
         for code, stock in position_stocks.items():
             cur_price = get_price_by_ts(code, get_current_ts())
             if cur_price > stock.max_price:
@@ -68,7 +68,7 @@ class Runner:
 
     def after_market_close(self):
         logger.info("【当日持仓情况】")
-        position_stocks = self.position_stock_pool.get()
+        position_stocks = self.get_position_stocks()
         self.position_cash = 0
         for code, stock in position_stocks.items():
             cur_price = get_price_by_ts(code, get_current_ts())
@@ -82,6 +82,18 @@ class Runner:
                                                              cur_price, round(rate * 100, 2), round(cur_price * stock.amount, 2),
                                                             round(last_price_diff, 2), round(total_price_diff, 2)))
         self.total_cash = self.position_cash + self.available_cash
+
+    def get_position_stocks(self):
+        return self.position_stock_pool.get()
+
+    def get_position_cnt(self):
+        return self.position_cnt
+
+    def get_total_cash(self):
+        return self.total_cash
+
+    def get_position_cash(self):
+        return self.position_cash
 
     def order(self, code, price, amount):
         if amount == 0:
@@ -97,7 +109,7 @@ class Runner:
         self.available_cash = self.available_cash - price * amount
 
     def sell(self, code, price, amount):
-        stock_map = self.position_stock_pool.get()
+        stock_map = self.get_position_stocks()
         if code not in stock_map.keys():
             logger.warning("卖出{}失败，当前持仓无该股票".format(get_stock_display_template(code)))
             return
@@ -111,11 +123,12 @@ class Runner:
         self.position_stock_pool.remove(code)
         self.position_cnt = self.position_cnt - 1
         self.position_cash = self.position_cash - price * amount
+        self.available_cash = self.available_cash + price * amount
         self.clearance_pool.add([code])
 
     def get_amount(self, price):
-        total_limit = self.total_cash / self.max_position_cnt
-        available_cash = self.total_cash - self.position_cash
+        total_limit = self.get_total_cash() / self.max_position_cnt
+        available_cash = self.get_total_cash() - self.get_position_cash()
         amount = 0
         while True:
             if (amount + 100) * price > total_limit or (amount + 100) * price > available_cash:

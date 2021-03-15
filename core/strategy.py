@@ -1,6 +1,6 @@
-from selector import *
-from buy_signal import *
-from sell_signal import *
+from core.selector import *
+from core.buy_signal import *
+from core.sell_signal import *
 from abc import ABCMeta, abstractmethod
 
 

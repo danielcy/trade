@@ -1,5 +1,5 @@
-from data_key import *
-from redis_dao import *
+from core.data_key import *
+from repository.redis_dao import *
 from utils.tech_data import *
 from abc import ABCMeta, abstractmethod
 
@@ -158,6 +158,45 @@ class RecentNoClearanceSelector(Selector):
             if code not in clearance_map.keys():
                 result.append(code)
         return result
+
+
+# 月K线策略选股，5、10周期金叉，20在中间，股价站于5月线之上
+class MonthGoldenSelector(Selector):
+    def load_data(self, data, codes):
+        if MONTH_MA_5_MAP not in data.keys():
+            data[MONTH_MA_5_MAP] = ma(codes, 5, now(), '1M', include_now=True)
+        if LAST_MONTH_MA_5_MAP not in data.keys():
+            data[LAST_MONTH_MA_5_MAP] = ma(codes, 5, get_date(now(), sub=30), '1M', include_now=True)
+        if MONTH_MA_10_MAP not in data.keys():
+            data[MONTH_MA_10_MAP] = ma(codes, 10, now(), '1M', include_now=True)
+        if LAST_MONTH_MA_10_MAP not in data.keys():
+            data[LAST_MONTH_MA_10_MAP] = ma(codes, 10, get_date(now(), sub=30), '1M', include_now=True)
+        if MONTH_MA_20_MAP not in data.keys():
+            data[MONTH_MA_20_MAP] = ma(codes, 20, now(), '1M', include_now=True)
+        if LAST_LOW_PRICE_MAP not in data.keys():
+            data[LAST_LOW_PRICE_MAP] = get_last_low_price(codes, '1M')
+        return data
+
+    def select(self, data, codes):
+        result = []
+        for code in codes:
+            ma5 = data[MONTH_MA_5_MAP][code]
+            last_ma5 = data[LAST_MONTH_MA_5_MAP][code]
+            ma10 = data[MONTH_MA_10_MAP][code]
+            last_ma10 = data[LAST_MONTH_MA_10_MAP][code]
+            ma20 = data[MONTH_MA_20_MAP][code]
+            last_price = data[LAST_LOW_PRICE_MAP][code]
+
+            # 当前月MA5 > MA20 > MA10
+            if ma5 > ma20 > ma10:
+                # 上上月MA5 < MA10(表示上月形成金叉)
+                if last_ma5 < last_ma10:
+                    # 当前价于MA5线之上
+                    if last_price > ma5:
+                        print("{} ma5: {}, ma10: {}, ma20: {}".format(code, ma5, ma10, ma20))
+                        result.append(code)
+        return result
+
 
 
 ##################################################################################

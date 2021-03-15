@@ -11,6 +11,7 @@ class StrategyTest(unittest.TestCase):
         login()
         clear_playback_test_ts()
         # set_playback_test_ts(1614581008)
+        ClearancePool().clear()
         start = int(time.time())
         cnt = get_query_count()['spare']
         strategy = DragonUpGoingStrategy()

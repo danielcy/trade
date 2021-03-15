@@ -1,12 +1,9 @@
-import threading
+from threading import Thread
 
 
-class CodeThread(threading.Thread):
-    def __init__(self, func, code, result):
-        threading.Thread.__init__(self)
-        self.func = func
-        self.code = code
-        self.result = result
-
-    def run(self):
-        self.func(self.code, self.result)
+def start_new_thread(function):
+    def decorator(*args, **kwargs):
+        t = Thread(target=function, args=args, kwargs=kwargs)
+        t.daemon = True
+        t.start()
+    return decorator

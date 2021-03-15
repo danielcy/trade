@@ -28,6 +28,12 @@ class SelectorTest(unittest.TestCase):
         pipe.chain(BottomFishingSelector())
         print(pipe.run())
 
+    def test_month_golden_selector(self):
+        login()
+        pipe = SelectPipeline()
+        pipe.chain(MonthGoldenSelector())
+        print(pipe.run())
+
 
 class SorterTest(unittest.TestCase):
     def test_rps_90_sorter(self):

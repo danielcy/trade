@@ -1,9 +1,9 @@
 from abc import ABCMeta, abstractmethod
 from utils.tech_data import *
 from utils.date_utils import *
-from data_key import *
-from redis_dao import *
-from stock_utils import *
+from core.data_key import *
+from repository.redis_dao import *
+from utils.stock_utils import *
 
 
 class SellSignalPipeline:

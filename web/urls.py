@@ -16,9 +16,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from web.service.playback_service import *
+from web.service.selector_service import *
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('playback/launch', run_playback),
-    path('playback/get_result', get_playback_result)
+    path('playback/get_result', get_playback_result),
+    path('selector/get_selectors', get_selectors),
+    path('selector/launch', launch_selector),
+    path('selector/get_result', get_selector_result),
 ]

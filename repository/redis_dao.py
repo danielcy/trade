@@ -10,6 +10,7 @@ POSITION_STOCK_POOL_KEY = "position_stock_pool"
 PLAYBACK_TEST_TS = "playback_test_ts"
 CLEARANCE_KEY = "clearance"
 PLAYBACK_RESULT = "playback_result"
+SELECTOR_RESULT = "selector_result"
 
 
 class StockTracingPool:
@@ -172,3 +173,18 @@ class ClearancePool:
 
     def clear(self):
         self.client.delete(CLEARANCE_KEY)
+
+
+class SelectorResultCache:
+    def __init__(self):
+        self.client = redis.StrictRedis(host='localhost', port=6379, db=0)
+
+    def add(self, id, codes):
+        data = json.dumps(codes)
+        self.client.hset(SELECTOR_RESULT, id, data)
+
+    def get(self, id):
+        data_json = self.client.hget(SELECTOR_RESULT, id)
+        if data_json is None:
+            return []
+        return json.loads(data_json)

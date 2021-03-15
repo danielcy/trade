@@ -1,6 +1,8 @@
 from core.data_key import *
 from repository.redis_dao import *
 from utils.tech_data import *
+from utils.thread_utils import *
+from utils.stock_utils import *
 from abc import ABCMeta, abstractmethod
 
 
@@ -8,6 +10,7 @@ class SelectPipeline:
     def __init__(self):
         self.selector_list = []
         self.sorter = Sorter()
+        self.result_cache = SelectorResultCache()
 
     def chain(self, selector):
         self.selector_list.append(selector)
@@ -16,14 +19,34 @@ class SelectPipeline:
     def set_sorter(self, sorter):
         self.sorter = sorter
 
-    def run(self):
+    def launch(self, ts):
+        id = int(time.time())
+        self.async_run(id, ts)
+        return id
+
+    @start_new_thread
+    def async_run(self, id=int(time.time()), ts=int(time.time())):
+        set_playback_test_ts(ts)
+        self.run(id)
+        clear_playback_test_ts()
+
+    def run(self, id=int(time.time())):
         data = {}
         # 初始默认只取A股沪深两市股票，暂无创业板权限QAQ
         codes = get_hs_stocks()
         for selector in self.selector_list:
             data = selector.load_data(data, codes)
             codes = selector.select(data, codes)
-        return self.sorter.sort(data, codes)
+        result = self.sorter.sort(data, codes)
+        self.result_cache.add(id, result)
+        return result
+
+    def get_display_result(self, id):
+        codes = self.result_cache.get(id)
+        result = []
+        for code in codes:
+            result.append(get_stock_display_template(code))
+        return result
 
 
 class Selector(metaclass=ABCMeta):
@@ -193,7 +216,6 @@ class MonthGoldenSelector(Selector):
                 if last_ma5 < last_ma10:
                     # 当前价于MA5线之上
                     if last_price > ma5:
-                        print("{} ma5: {}, ma10: {}, ma20: {}".format(code, ma5, ma10, ma20))
                         result.append(code)
         return result
 
